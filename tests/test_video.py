@@ -1,0 +1,35 @@
+import pytest
+from unittest.mock import patch, MagicMock
+from pathlib import Path
+from src.video import extract_frames, FrameExtractionError
+
+
+def test_raises_if_video_not_found(tmp_path):
+    with pytest.raises(FrameExtractionError, match="not found"):
+        extract_frames(Path("/nonexistent/video.mp4"), tmp_path)
+
+
+def test_raises_if_ffmpeg_not_installed(tmp_path, mocker):
+    mocker.patch("shutil.which", return_value=None)
+    fake_video = tmp_path / "video.mp4"
+    fake_video.touch()
+    with pytest.raises(FrameExtractionError, match="ffmpeg"):
+        extract_frames(fake_video, tmp_path)
+
+
+def test_returns_12_frame_paths(tmp_path, mocker):
+    mocker.patch("shutil.which", return_value="/usr/bin/ffmpeg")
+    # Use a real path that exists (tmp_path itself) as the video to bypass the existence check
+    fake_video = tmp_path / "video.mp4"
+    fake_video.touch()
+    mock_run = mocker.patch("subprocess.run")
+    mock_run.return_value = MagicMock(returncode=0, stdout="10.0\n")
+    frames_dir = tmp_path / "frames"
+    frames_dir.mkdir()
+    # Simulate ffmpeg creating 12 frame files
+    for i in range(1, 13):
+        (frames_dir / f"frame_{i:03d}.jpg").touch()
+
+    frames = extract_frames(fake_video, frames_dir)
+    assert len(frames) == 12
+    assert all(f.suffix == ".jpg" for f in frames)
