@@ -42,17 +42,23 @@
 - Vue 3 + TypeScript + Vite 项目结构
 - 前端路由和基础布局
 - 视频上传组件（拖拽 + 选择）
-- 后端 Flask/FastAPI API 框架
+- 后端 FastAPI 框架
 - 上传接口（接收视频并保存）
 
 **Technical Notes:**
 - 前端：Vue 3 Composition API + TypeScript
-- 样式：Tailwind CSS 或 UnoCSS
+- 样式：Tailwind CSS
 - 后端：FastAPI（轻量，异步支持好）
 - 视频存储：本地文件系统 output/uploads/
 
 **Dependencies:**
 - Phase 1 is independent
+
+**Plans:** 2 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Vue 前端项目初始化，配置 Tailwind CSS，创建视频上传界面组件
+- [ ] 01-02-PLAN.md — FastAPI 后端搭建，实现视频上传 API，前端后端集成
 
 ---
 
@@ -135,7 +141,7 @@
 **Key Deliverables:**
 - 职业选手视频库（内置样本）
 - 分屏对比播放器组件
-- 同步播放控制（播放/暂停/进度同步）
+- 同步播放控制（同时播放/暂停）
 - 关键帧对齐标记功能
 
 **Technical Notes:**
@@ -183,7 +189,7 @@
 - 历史列表页面
 - 搜索和筛选功能
 - 删除确认对话框
-- 重新打开历史报告
+- 重新查看历史报告
 
 **Technical Notes:**
 - 分析元数据存储（ID、日期、视频名、评分、状态）
@@ -227,9 +233,9 @@ Phase 7 (History)
 
 ## Next Steps
 
-1. Run `/gsd-plan-phase 1` to start detailed planning for Phase 1
-2. Review requirements and provide feedback if needed
-3. Proceed with Phase 1 execution
+1. Review Phase 1 plans (01-01-PLAN.md, 01-02-PLAN.md)
+2. Run `/gsd-execute-phase 01` to start Phase 1 execution
+3. Review requirements and provide feedback if needed
 
 ---
-*Roadmap created: 2026-04-21*
+*Roadmap updated: 2026-04-21 after Phase 1 planning*
