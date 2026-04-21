@@ -1,16 +1,26 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import VideoUploader from '../components/VideoUploader.vue'
 import AnalysisTypeSelector from '../components/AnalysisTypeSelector.vue'
 import type { VideoInfo, AnalysisType } from '../types/upload'
 
+const router = useRouter()
 const selectedVideo = ref<VideoInfo | null>(null)
 const analysisType = ref<AnalysisType>('full')
+const uploadError = ref<string | null>(null)
+const uploadedVideoId = ref<string | null>(null)
 
 const hasVideo = computed(() => selectedVideo.value !== null)
 
-function handleFileSelected(videoInfo: VideoInfo) {
-  selectedVideo.value = videoInfo
+function handleUploadSuccess(result: { videoId: string; metadata: VideoInfo }) {
+  selectedVideo.value = result.metadata
+  uploadedVideoId.value = result.videoId
+  uploadError.value = null
+}
+
+function handleUploadError(error: string) {
+  uploadError.value = error
 }
 
 function formatDuration(seconds?: number): string {
@@ -34,17 +44,19 @@ function formatResolution(width?: number, height?: number): string {
 }
 
 function handleSubmit() {
-  if (!hasVideo.value) return
-  // TODO: Connect to backend API in Plan 01-02
-  console.log('Submitting:', {
-    video: selectedVideo.value,
-    analysisType: analysisType.value,
+  if (!hasVideo.value || !uploadedVideoId.value) return
+
+  // Navigate to analysis page with video ID
+  router.push({
+    name: 'analysis',
+    params: { videoId: uploadedVideoId.value }
   })
-  alert('视频上传成功！后端 API 将在后续计划中实现。')
 }
 
 function handleReset() {
   selectedVideo.value = null
+  uploadedVideoId.value = null
+  uploadError.value = null
   analysisType.value = 'full'
 }
 </script>
@@ -69,7 +81,24 @@ function handleReset() {
           <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
             1. 选择视频文件
           </h2>
-          <VideoUploader @file-selected="handleFileSelected" />
+          <VideoUploader
+            :analysis-type="analysisType"
+            @upload-success="handleUploadSuccess"
+            @upload-error="handleUploadError"
+          />
+        </div>
+
+        <!-- Error Message -->
+        <div
+          v-if="uploadError"
+          class="p-4 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800"
+        >
+          <div class="flex items-center">
+            <svg class="w-5 h-5 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="text-red-700 dark:text-red-400">{{ uploadError }}</span>
+          </div>
         </div>
 
         <!-- Video Info Section -->
@@ -139,7 +168,7 @@ function handleReset() {
         <div v-if="hasVideo" class="p-8">
           <button
             class="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="!hasVideo"
+            :disabled="!hasVideo || !uploadedVideoId"
             @click="handleSubmit"
           >
             开始分析

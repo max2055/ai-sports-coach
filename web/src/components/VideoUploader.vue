@@ -1,21 +1,31 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { UploadStatus, VideoInfo } from '../types/upload'
+import type { UploadStatus, VideoInfo, AnalysisType } from '../types/upload'
+import { useUpload } from '../composables/useUpload'
+
+const props = defineProps<{
+  analysisType: AnalysisType
+}>()
 
 const emit = defineEmits<{
-  (e: 'fileSelected', videoInfo: VideoInfo): void
+  (e: 'uploadSuccess', result: { videoId: string; metadata: VideoInfo }): void
+  (e: 'uploadError', error: string): void
 }>()
 
 const dragOver = ref(false)
 const uploadStatus = ref<UploadStatus>('idle')
-const uploadProgress = ref(0)
-const errorMessage = ref('')
+const selectedFile = ref<File | null>(null)
+const videoInfo = ref<Partial<VideoInfo>>({})
+
+const { uploading, progress, error, result, upload, reset: resetUpload } = useUpload()
 
 const ACCEPTED_TYPES = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska', 'video/webm']
 const ACCEPTED_EXTENSIONS = ['.mp4', '.mov', '.avi', '.mkv', '.webm']
 
-const isUploading = computed(() => uploadStatus.value === 'uploading')
-const hasError = computed(() => uploadStatus.value === 'error')
+const isUploading = computed(() => uploading.value)
+const hasError = computed(() => uploadStatus.value === 'error' || !!error.value)
+const errorMessage = computed(() => error.value || '')
+const isSuccess = computed(() => uploadStatus.value === 'success')
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes'
@@ -52,43 +62,43 @@ function extractVideoMetadata(file: File): Promise<Partial<VideoInfo>> {
 
 async function handleFile(file: File) {
   if (!isValidVideoFile(file)) {
-    errorMessage.value = '请选择有效的视频文件 (mp4, mov, avi, mkv, webm)'
     uploadStatus.value = 'error'
+    emit('uploadError', '请选择有效的视频文件 (mp4, mov, avi, mkv, webm)')
     return
   }
 
+  selectedFile.value = file
   uploadStatus.value = 'uploading'
-  uploadProgress.value = 0
-  errorMessage.value = ''
-
-  // Simulate upload progress
-  const progressInterval = setInterval(() => {
-    if (uploadProgress.value < 90) {
-      uploadProgress.value += Math.random() * 15
-    }
-  }, 200)
+  resetUpload()
 
   try {
     const metadata = await extractVideoMetadata(file)
+    videoInfo.value = metadata
 
-    clearInterval(progressInterval)
-    uploadProgress.value = 100
+    // Upload to backend API
+    const uploadResult = await upload(file, props.analysisType)
 
-    const videoInfo: VideoInfo = {
-      file,
-      name: file.name,
-      size: file.size,
-      duration: metadata.duration,
-      width: metadata.width,
-      height: metadata.height,
+    if (uploadResult) {
+      uploadStatus.value = 'success'
+      const fullVideoInfo: VideoInfo = {
+        file,
+        name: file.name,
+        size: file.size,
+        duration: metadata.duration,
+        width: metadata.width,
+        height: metadata.height,
+      }
+      emit('uploadSuccess', {
+        videoId: uploadResult.video_id,
+        metadata: fullVideoInfo
+      })
+    } else {
+      uploadStatus.value = 'error'
+      emit('uploadError', error.value || '上传失败')
     }
-
-    uploadStatus.value = 'success'
-    emit('fileSelected', videoInfo)
-  } catch (error) {
-    clearInterval(progressInterval)
+  } catch (err) {
     uploadStatus.value = 'error'
-    errorMessage.value = '处理视频文件时出错'
+    emit('uploadError', err instanceof Error ? err.message : '处理视频文件时出错')
   }
 }
 
@@ -140,6 +150,7 @@ function triggerFileInput() {
           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
           : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500',
         hasError ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : '',
+        isSuccess ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : '',
       ]"
       @click="triggerFileInput"
     >
@@ -154,7 +165,7 @@ function triggerFileInput() {
       <!-- Icon -->
       <div class="mb-4">
         <svg
-          v-if="uploadStatus === 'success'"
+          v-if="isSuccess"
           class="mx-auto h-12 w-12 text-green-500"
           fill="none"
           viewBox="0 0 24 24"
@@ -200,7 +211,7 @@ function triggerFileInput() {
       <!-- Text -->
       <p class="text-lg font-medium text-gray-700 dark:text-gray-300">
         <span v-if="isUploading">正在上传...</span>
-        <span v-else-if="uploadStatus === 'success'">文件已选择</span>
+        <span v-else-if="isSuccess">上传成功</span>
         <span v-else-if="hasError">上传失败</span>
         <span v-else>拖拽视频文件到此处，或点击选择</span>
       </p>
@@ -221,13 +232,13 @@ function triggerFileInput() {
           上传进度
         </span>
         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {{ Math.round(uploadProgress) }}%
+          {{ Math.round(progress) }}%
         </span>
       </div>
       <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
         <div
           class="bg-blue-600 h-2.5 rounded-full transition-all duration-200"
-          :style="{ width: uploadProgress + '%' }"
+          :style="{ width: progress + '%' }"
         ></div>
       </div>
     </div>
