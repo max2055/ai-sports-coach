@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import upload, analysis
+from routers import analysis, frames, upload
 
 app = FastAPI(
     title="AI Tennis Coach API",
@@ -23,6 +23,7 @@ app.add_middleware(
 # Include routers
 app.include_router(upload.router, prefix="/api", tags=["upload"])
 app.include_router(analysis.router, prefix="/api", tags=["analysis"])
+app.include_router(frames.router, prefix="/api", tags=["frames"])
 
 
 @app.get("/health")
