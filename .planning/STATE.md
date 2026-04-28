@@ -2,7 +2,7 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Complete Web Experience
-current_phase: Phase 3 — Video Player
+current_phase: Phase 4 — Charts
 status: in_progress
 last_updated: "2026-04-28T08:00:00Z"
 progress:
@@ -33,27 +33,26 @@ See: `.planning/PROJECT.md` (updated 2026-04-21)
 | 1 | Project Setup | ✓ Complete | 100% | 01-01 ✓, 01-02 ✓ |
 | 2 | Analysis Pipeline | ✓ Complete | 100% | 02-01 ✓, 02-02 ✓ |
 | 3 | Video Player | ✓ Complete | 100% | 03-01 ✓, 03-02 ✓ |
-| 4 | Charts | ○ Pending | 0% | — |
+| 4 | Charts | ○ In Progress | 50% | 04-01 ✓ |
 | 5 | Comparison | ○ Pending | 0% | — |
 | 6 | Report | ○ Pending | 0% | — |
 | 7 | History | ○ Pending | 0% | — |
 
-## Phase 3 Plans
+## Phase 4 Plans
 
 | Plan | Wave | Objective | Dependencies |
 |------|------|-----------|--------------|
-| 03-01 | 1 | 后端帧数据服务（API 返回标注数据） | Phase 2 |
-| 03-02 | 2 | 前端视频播放器组件 | 03-01 |
-| 03-03 | 3 | Canvas 标注叠加层 | 03-02 |
+| 04-01 | 1 | 后端图表数据 API | Phase 3 |
+| 04-02 | 2 | 前端图表组件 | 04-01 |
 
-## Requirements Coverage (Phase 3)
+## Requirements Coverage (Phase 4)
 
 | Requirement | Plan | Description |
 |-------------|------|-------------|
-| PLAY-02 | 03-01 | 后端返回标注数据 |
-| PLAY-03 | 03-01 | 标注层开关 |
-| FRAME-01 | 03-01 | 帧坐标+问题标签 |
-| FRAME-03 | 03-01 | 问题帧列表 |
+| CHART-01 | 04-01 | 发球高度趋势图数据 |
+| CHART-02 | 04-01 | 击球点分布图数据 |
+| CHART-03 | 04-01 | 雷达图 6 维度数据 |
+| CHART-04 | 04-01 | 问题统计图数据 |
 
 ## Decisions
 
