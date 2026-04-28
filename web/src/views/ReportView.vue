@@ -8,6 +8,9 @@ import ServeHeightChart from '../components/ServeHeightChart.vue'
 import HitPointHeatmap from '../components/HitPointHeatmap.vue'
 import ConsistencyRadar from '../components/ConsistencyRadar.vue'
 import IssueStatsChart from '../components/IssueStatsChart.vue'
+import ProVideoSelector from '../components/ProVideoSelector.vue'
+import ComparisonPlayer from '../components/ComparisonPlayer.vue'
+import KeyframeMarker from '../components/KeyframeMarker.vue'
 import {
   getFrameAnnotations,
   getIssueFrames,
@@ -25,6 +28,7 @@ import {
   type RadarDimension,
   type IssueStat
 } from '../api/charts'
+import { type ProVideo, type ProVideoType } from '../api/pros'
 
 const route = useRoute()
 const videoId = route.params.videoId as string
@@ -128,6 +132,43 @@ const formatTime = (seconds: number): string => {
 // Reload page
 const reloadPage = () => {
   window.location.reload()
+}
+
+// Comparison state
+const selectedProVideo = ref<ProVideo | null>(null)
+const timeOffset = ref<number | undefined>(undefined)
+const userCurrentTime = ref(0)
+const proCurrentTime = ref(0)
+
+// Analysis type mapping (default to forehand if unknown)
+const analysisType = computed<ProVideoType>(() => {
+  // Try to infer from video ID or default to forehand
+  // In a real app, this would come from the analysis metadata
+  const lowerId = videoId.toLowerCase()
+  if (lowerId.includes('backhand')) return 'backhand'
+  if (lowerId.includes('serve')) return 'serve'
+  if (lowerId.includes('volley')) return 'volley'
+  return 'forehand'
+})
+
+// Handle pro video selection
+const onProVideoSelect = (video: ProVideo) => {
+  selectedProVideo.value = video
+  timeOffset.value = undefined
+}
+
+// Handle time updates from comparison player
+const handleUserTimeUpdate = (time: number) => {
+  userCurrentTime.value = time
+}
+
+const handleProTimeUpdate = (time: number) => {
+  proCurrentTime.value = time
+}
+
+// Handle offset application
+const onApplyOffset = (offset: number) => {
+  timeOffset.value = offset
 }
 </script>
 
@@ -352,6 +393,45 @@ const reloadPage = () => {
             v-if="issueStats.length > 0"
             :stats="issueStats"
           />
+        </div>
+      </div>
+
+      <!-- Comparison Section -->
+      <div class="comparison-section mt-8 border-t border-gray-200 dark:border-gray-700 pt-6">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          职业选手对比
+        </h2>
+
+        <!-- Pro video selector (shown when no video selected) -->
+        <ProVideoSelector
+          v-if="!selectedProVideo"
+          :analysis-type="analysisType"
+          @select="onProVideoSelect"
+        />
+
+        <!-- Comparison player (shown when video selected) -->
+        <div v-else class="space-y-4">
+          <ComparisonPlayer
+            :user-video-url="videoUrl"
+            :user-annotations="annotations"
+            :pro-video="selectedProVideo"
+            :time-offset="timeOffset"
+            @user-time-update="handleUserTimeUpdate"
+            @pro-time-update="handleProTimeUpdate"
+          />
+
+          <KeyframeMarker
+            :user-current-time="userCurrentTime"
+            :pro-current-time="proCurrentTime"
+            @apply-offset="onApplyOffset"
+          />
+
+          <button
+            @click="selectedProVideo = null"
+            class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          >
+            ← 更换对比视频
+          </button>
         </div>
       </div>
     </div>
