@@ -12,6 +12,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'timeupdate', time: number): void
   (e: 'framechange', frameNumber: number): void
+  (e: 'durationchange', duration: number): void
 }>()
 
 // Refs
@@ -191,6 +192,7 @@ const handleLoadedMetadata = () => {
 
   duration.value = video.duration
   videoFps.value = props.fps || 30
+  emit('durationchange', video.duration)
   resizeCanvas()
 }
 

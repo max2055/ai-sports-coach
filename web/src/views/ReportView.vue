@@ -1,37 +1,252 @@
 <script setup lang="ts">
+import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import AnnotatedVideoPlayer from '../components/AnnotatedVideoPlayer.vue'
+import FrameTimeline from '../components/FrameTimeline.vue'
+import IssueFrameList from '../components/IssueFrameList.vue'
+import {
+  getFrameAnnotations,
+  getIssueFrames,
+  getVideoUrl,
+  type FrameAnnotation,
+  type IssueFrame
+} from '../api/frames'
 
 const route = useRoute()
 const videoId = route.params.videoId as string
+
+// State
+const annotations = ref<FrameAnnotation[]>([])
+const issueFrames = ref<IssueFrame[]>([])
+const currentTime = ref(0)
+const duration = ref(0)
+const isLoading = ref(true)
+const error = ref<string | null>(null)
+
+// Video player ref
+const playerRef = ref<InstanceType<typeof AnnotatedVideoPlayer> | null>(null)
+
+// Video URL
+const videoUrl = computed(() => getVideoUrl(videoId))
+
+// Load data on mount
+onMounted(async () => {
+  try {
+    isLoading.value = true
+    error.value = null
+
+    // Load annotations and issue frames in parallel
+    const [annotationsData, issuesData] = await Promise.all([
+      getFrameAnnotations(videoId),
+      getIssueFrames(videoId)
+    ])
+
+    annotations.value = annotationsData
+    issueFrames.value = issuesData
+  } catch (err) {
+    console.error('Failed to load report data:', err)
+    error.value = '加载报告数据失败，请稍后重试'
+  } finally {
+    isLoading.value = false
+  }
+})
+
+// Handle time update from player
+const handleTimeUpdate = (time: number) => {
+  currentTime.value = time
+}
+
+// Handle duration change from player
+const handleDurationChange = (dur: number) => {
+  duration.value = dur
+}
+
+// Handle seek from timeline
+const handleSeek = (time: number) => {
+  if (playerRef.value) {
+    playerRef.value.seek(time)
+  }
+}
+
+// Handle frame selection from issue list
+const handleFrameSelect = (frameNumber: number, time: number) => {
+  if (playerRef.value) {
+    playerRef.value.seek(time)
+  }
+}
+
+// Format time as mm:ss
+const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-4xl mx-auto">
-      <!-- Header -->
-      <div class="text-center mb-10">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          分析报告
-        </h1>
-        <p class="text-lg text-gray-600 dark:text-gray-400">
-          视频ID: {{ videoId }}
-        </p>
-      </div>
-
-      <!-- Placeholder Content -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-        <div class="text-center py-12">
-          <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 mb-4">
-            <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- Header -->
+    <div class="bg-white dark:bg-gray-800 shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+              技术分析报告
+            </h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              视频ID: {{ videoId }}
+            </p>
           </div>
-          <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            报告生成中
-          </h2>
-          <p class="text-gray-500 dark:text-gray-400">
-            完整的分析报告功能将在后续版本中实现
-          </p>
+          <router-link
+            to="/"
+            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+          >
+            返回首页
+          </router-link>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading state -->
+    <div
+      v-if="isLoading"
+      class="flex items-center justify-center py-20"
+    >
+      <div class="flex flex-col items-center">
+        <svg
+          class="animate-spin h-10 w-10 text-blue-600 mb-4"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          />
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
+        </svg>
+        <p class="text-gray-600 dark:text-gray-400">加载中...</p>
+      </div>
+    </div>
+
+    <!-- Error state -->
+    <div
+      v-else-if="error"
+      class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+    >
+      <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+        <svg
+          class="w-12 h-12 text-red-500 mx-auto mb-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+        <h3 class="text-lg font-medium text-red-800 dark:text-red-200 mb-2">
+          加载失败
+        </h3>
+        <p class="text-red-600 dark:text-red-400">{{ error }}</p>
+        <button
+          @click="() => location.reload()"
+          class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          重试
+        </button>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div
+      v-else
+      class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+    >
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Video player section -->
+        <div class="lg:col-span-2 space-y-4">
+          <!-- Video player -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+            <div class="p-4">
+              <AnnotatedVideoPlayer
+                ref="playerRef"
+                :video-url="videoUrl"
+                :video-id="videoId"
+                :annotations="annotations"
+                @timeupdate="handleTimeUpdate"
+                @durationchange="handleDurationChange"
+              />
+            </div>
+          </div>
+
+          <!-- Timeline -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+              时间轴
+            </h3>
+            <FrameTimeline
+              :duration="duration"
+              :current-time="currentTime"
+              :issue-frames="issueFrames"
+              @seek="handleSeek"
+            />
+          </div>
+
+          <!-- Stats summary -->
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+              分析统计
+            </h3>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div class="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {{ annotations.length }}
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-400">标注帧</div>
+              </div>
+              <div class="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div class="text-2xl font-bold text-red-600 dark:text-red-400">
+                  {{ issueFrames.filter(f => f.issue_types.some(t => !t.startsWith('GOOD'))).length }}
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-400">问题帧</div>
+              </div>
+              <div class="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {{ issueFrames.filter(f => f.issue_types.some(t => t.startsWith('GOOD'))).length }}
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-400">正确动作</div>
+              </div>
+              <div class="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div class="text-2xl font-bold text-gray-600 dark:text-gray-400">
+                  {{ duration > 0 ? formatTime(duration) : '--:--' }}
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-400">视频时长</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Issue frame list section -->
+        <div class="lg:col-span-1">
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sticky top-4">
+            <IssueFrameList
+              :issue-frames="issueFrames"
+              :video-id="videoId"
+              @select="handleFrameSelect"
+            />
+          </div>
         </div>
       </div>
     </div>
