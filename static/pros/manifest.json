@@ -1,0 +1,11 @@
+{
+  "videos": [
+    {"id": "forehand_01", "type": "forehand", "name": "标准正手", "description": "教科书式正手击球动作", "file": "forehand_01.mp4"},
+    {"id": "forehand_02", "type": "forehand", "name": "开放式正手", "description": "现代开放式站位正手", "file": "forehand_02.mp4"},
+    {"id": "backhand_01", "type": "backhand", "name": "双反标准", "description": "双手反拍标准动作", "file": "backhand_01.mp4"},
+    {"id": "backhand_02", "type": "backhand", "name": "单反切削", "description": "单手反拍切削球", "file": "backhand_02.mp4"},
+    {"id": "serve_01", "type": "serve", "name": "平击发球", "description": "强力平击发球", "file": "serve_01.mp4"},
+    {"id": "serve_02", "type": "serve", "name": "上旋发球", "description": "kick serve 上旋发球", "file": "serve_02.mp4"},
+    {"id": "volley_01", "type": "volley", "name": "正手截击", "description": "网前正手截击", "file": "volley_01.mp4"}
+  ]
+}
