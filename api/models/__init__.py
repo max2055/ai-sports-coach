@@ -2,6 +2,7 @@
 
 from models.upload import UploadResponse, VideoMetadata, AnalysisType
 from models.analysis import AnalysisState, AnalysisResponse, AnalysisStatus
+from models.frame import FrameAnnotation, IssueFrame, BodyPartAnnotation, PlayerAnnotation, IssueType
 
 __all__ = [
     "UploadResponse",
@@ -10,4 +11,9 @@ __all__ = [
     "AnalysisState",
     "AnalysisResponse",
     "AnalysisStatus",
+    "FrameAnnotation",
+    "IssueFrame",
+    "BodyPartAnnotation",
+    "PlayerAnnotation",
+    "IssueType",
 ]
