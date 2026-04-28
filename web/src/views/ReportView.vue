@@ -4,6 +4,10 @@ import { useRoute } from 'vue-router'
 import AnnotatedVideoPlayer from '../components/AnnotatedVideoPlayer.vue'
 import FrameTimeline from '../components/FrameTimeline.vue'
 import IssueFrameList from '../components/IssueFrameList.vue'
+import ServeHeightChart from '../components/ServeHeightChart.vue'
+import HitPointHeatmap from '../components/HitPointHeatmap.vue'
+import ConsistencyRadar from '../components/ConsistencyRadar.vue'
+import IssueStatsChart from '../components/IssueStatsChart.vue'
 import {
   getFrameAnnotations,
   getIssueFrames,
@@ -11,6 +15,16 @@ import {
   type FrameAnnotation,
   type IssueFrame
 } from '../api/frames'
+import {
+  getServeHeightData,
+  getHitPointData,
+  getRadarData,
+  getIssueStats,
+  type ServeHeightPoint,
+  type HitPoint,
+  type RadarDimension,
+  type IssueStat
+} from '../api/charts'
 
 const route = useRoute()
 const videoId = route.params.videoId as string
@@ -22,6 +36,14 @@ const currentTime = ref(0)
 const duration = ref(0)
 const isLoading = ref(true)
 const error = ref<string | null>(null)
+
+// Chart data state
+const serveHeightPoints = ref<ServeHeightPoint[]>([])
+const hitPoints = ref<HitPoint[]>([])
+const radarDimensions = ref<RadarDimension[]>([])
+const radarOverallScore = ref(0)
+const issueStats = ref<IssueStat[]>([])
+const chartsLoading = ref(true)
 
 // Video player ref
 const playerRef = ref<InstanceType<typeof AnnotatedVideoPlayer> | null>(null)
@@ -48,6 +70,27 @@ onMounted(async () => {
     error.value = '加载报告数据失败，请稍后重试'
   } finally {
     isLoading.value = false
+  }
+
+  // Load chart data
+  try {
+    chartsLoading.value = true
+    const [serveHeightData, hitPointData, radarData, issueStatsData] = await Promise.all([
+      getServeHeightData(videoId).catch(() => ({ points: [] })),
+      getHitPointData(videoId).catch(() => ({ points: [] })),
+      getRadarData(videoId).catch(() => ({ dimensions: [], overall_score: 0 })),
+      getIssueStats(videoId).catch(() => ({ stats: [], total_issues: 0, total_frames: 0 }))
+    ])
+
+    serveHeightPoints.value = serveHeightData.points
+    hitPoints.value = hitPointData.points
+    radarDimensions.value = radarData.dimensions
+    radarOverallScore.value = radarData.overall_score
+    issueStats.value = issueStatsData.stats
+  } catch (err) {
+    console.error('Failed to load chart data:', err)
+  } finally {
+    chartsLoading.value = false
   }
 })
 
@@ -80,6 +123,11 @@ const formatTime = (seconds: number): string => {
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
   return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+// Reload page
+const reloadPage = () => {
+  window.location.reload()
 }
 </script>
 
@@ -161,7 +209,7 @@ const formatTime = (seconds: number): string => {
         </h3>
         <p class="text-red-600 dark:text-red-400">{{ error }}</p>
         <button
-          @click="() => location.reload()"
+          @click="reloadPage"
           class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
         >
           重试
@@ -247,6 +295,63 @@ const formatTime = (seconds: number): string => {
               @select="handleFrameSelect"
             />
           </div>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="charts-section mt-8">
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+          数据分析
+        </h2>
+
+        <div v-if="chartsLoading" class="flex justify-center py-8">
+          <svg
+            class="animate-spin h-8 w-8 text-blue-600"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            />
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+        </div>
+
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Serve Height Chart -->
+          <ServeHeightChart
+            v-if="serveHeightPoints.length > 0"
+            :points="serveHeightPoints"
+          />
+
+          <!-- Hit Point Heatmap -->
+          <HitPointHeatmap
+            v-if="hitPoints.length > 0"
+            :points="hitPoints"
+          />
+
+          <!-- Consistency Radar -->
+          <ConsistencyRadar
+            v-if="radarDimensions.length > 0"
+            :dimensions="radarDimensions"
+            :overall-score="radarOverallScore"
+          />
+
+          <!-- Issue Statistics -->
+          <IssueStatsChart
+            v-if="issueStats.length > 0"
+            :stats="issueStats"
+          />
         </div>
       </div>
     </div>
