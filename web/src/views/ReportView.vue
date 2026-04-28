@@ -29,6 +29,12 @@ import {
   type IssueStat
 } from '../api/charts'
 import { type ProVideo, type ProVideoType } from '../api/pros'
+import { getCoachReport, type CoachReport } from '../api/report'
+import ScoreCard from '../components/ScoreCard.vue'
+import StrengthsList from '../components/StrengthsList.vue'
+import IssueAnalysis from '../components/IssueAnalysis.vue'
+import TrainingPlan from '../components/TrainingPlan.vue'
+import CoachSummary from '../components/CoachSummary.vue'
 
 const route = useRoute()
 const videoId = route.params.videoId as string
@@ -48,6 +54,10 @@ const radarDimensions = ref<RadarDimension[]>([])
 const radarOverallScore = ref(0)
 const issueStats = ref<IssueStat[]>([])
 const chartsLoading = ref(true)
+
+// Report data state
+const coachReport = ref<CoachReport | null>(null)
+const reportLoading = ref(true)
 
 // Video player ref
 const playerRef = ref<InstanceType<typeof AnnotatedVideoPlayer> | null>(null)
@@ -95,6 +105,17 @@ onMounted(async () => {
     console.error('Failed to load chart data:', err)
   } finally {
     chartsLoading.value = false
+  }
+
+  // Load coach report
+  try {
+    reportLoading.value = true
+    coachReport.value = await getCoachReport(videoId).catch(() => null)
+  } catch (err) {
+    console.error('Failed to load coach report:', err)
+    coachReport.value = null
+  } finally {
+    reportLoading.value = false
   }
 })
 
@@ -263,6 +284,80 @@ const onApplyOffset = (offset: number) => {
       v-else
       class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
     >
+      <!-- Report Section (top) -->
+      <div v-if="coachReport" class="report-section space-y-6 mb-8">
+        <!-- Score Card -->
+        <ScoreCard
+          :overall-score="coachReport.overall_score"
+          :radar-scores="coachReport.radar_scores"
+        />
+
+        <!-- Strengths -->
+        <StrengthsList :strengths="coachReport.strengths" />
+
+        <!-- Issue Analysis -->
+        <IssueAnalysis
+          :issues="coachReport.issues"
+          :improvement-suggestions="coachReport.improvement_suggestions"
+        />
+
+        <!-- Issue Summary Table -->
+        <div
+          v-if="coachReport.issue_summary.length > 0"
+          class="issue-summary rounded-xl bg-white dark:bg-gray-800 p-6 shadow-lg"
+        >
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            问题汇总表
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-gray-200 dark:border-gray-700">
+                  <th class="text-left py-2 px-3 text-gray-600 dark:text-gray-400">帧</th>
+                  <th class="text-left py-2 px-3 text-gray-600 dark:text-gray-400">问题类型</th>
+                  <th class="text-left py-2 px-3 text-gray-600 dark:text-gray-400">部位</th>
+                  <th class="text-left py-2 px-3 text-gray-600 dark:text-gray-400">描述</th>
+                  <th class="text-left py-2 px-3 text-gray-600 dark:text-gray-400">优先级</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(row, index) in coachReport.issue_summary.slice(0, 20)"
+                  :key="index"
+                  class="border-b border-gray-100 dark:border-gray-700"
+                >
+                  <td class="py-2 px-3 text-gray-900 dark:text-white">{{ row.frame_number }}</td>
+                  <td class="py-2 px-3 text-gray-900 dark:text-white">{{ row.issue_type }}</td>
+                  <td class="py-2 px-3 text-gray-600 dark:text-gray-400">{{ row.body_part }}</td>
+                  <td class="py-2 px-3 text-gray-600 dark:text-gray-400">{{ row.description }}</td>
+                  <td class="py-2 px-3">
+                    <span
+                      class="text-xs px-2 py-0.5 rounded"
+                      :class="{
+                        'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300': row.priority === 'high',
+                        'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300': row.priority === 'medium',
+                        'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300': row.priority === 'low',
+                      }"
+                    >
+                      {{ row.priority === 'high' ? '高' : row.priority === 'medium' ? '中' : '低' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Training Plan -->
+        <TrainingPlan :training-plan="coachReport.training_plan" />
+
+        <!-- Coach Summary -->
+        <CoachSummary :summary="coachReport.coach_summary" />
+      </div>
+
+      <!-- Divider between report and video -->
+      <div v-if="coachReport" class="border-t border-gray-200 dark:border-gray-700 my-8"></div>
+
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Video player section -->
         <div class="lg:col-span-2 space-y-4">
