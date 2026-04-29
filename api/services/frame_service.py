@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -12,9 +13,14 @@ logger = logging.getLogger(__name__)
 # Output directory for analysis results
 ANALYSIS_DIR = Path("output/analysis")
 
+# Validate video_id: alphanumeric, underscores, and hyphens only
+_VIDEO_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_-]+$')
+
 
 def _get_analysis_dir(video_id: str) -> Path:
     """Get the analysis output directory for a video."""
+    if not _VIDEO_ID_PATTERN.match(video_id):
+        raise ValueError(f"Invalid video_id: {video_id}")
     return ANALYSIS_DIR / video_id
 
 
@@ -99,25 +105,54 @@ def _parse_player_annotation(data: dict) -> PlayerAnnotation:
     )
 
 
+# Mapping from tennis_annotate.py snake_case keys to backend uppercase IssueType values
+_ISSUE_TYPE_MAP = {
+    "late_backswing": "LATE BACKSWING",
+    "wrong_grip": "WRONG GRIP",
+    "grip_change_error": "GRIP CHANGE ERR",
+    "wrong_contact_point": "WRONG CONTACT",
+    "elbow_drop": "ELBOW DROP",
+    "no_hip_rotation": "NO HIP ROT",
+    "shoulder_rot_late": "LATE SHOULDER",
+    "poor_follow_through": "NO FOLLOW-THRU",
+    "poor_footwork": "POOR FOOTWORK",
+    "no_split_step": "NO SPLIT STEP",
+    "late_weight_transfer": "LATE WEIGHT",
+    "wrong_stance": "WRONG STANCE",
+    "wrong_court_position": "WRONG POSITION",
+    "poor_serve_toss": "BAD TOSS",
+    "no_leg_drive": "NO LEG DRIVE",
+    "off_balance": "OFF BALANCE",
+    "telegraphing": "TELEGRAPH",
+    "wrong_spin": "WRONG SPIN",
+    "good_form": "GOOD FORM",
+    "good_footwork": "GOOD FOOTWORK",
+    "good_tactics": "GOOD TACTICS",
+}
+
+
 def _parse_body_part(data: dict) -> BodyPartAnnotation:
     """Parse a body part annotation from raw dict data."""
+    raw_issue = data.get("issue_type", "")
+    mapped_issue = _ISSUE_TYPE_MAP.get(raw_issue) if raw_issue else None
     return BodyPartAnnotation(
         x_pct=float(data.get("x_pct", 0.0)),
         y_pct=float(data.get("y_pct", 0.0)),
         radius_pct=float(data.get("radius_pct", 0.03)),
-        issue_type=data.get("issue_type") if data.get("issue_type") else None,
+        issue_type=mapped_issue,
         issue_note=data.get("issue_note") if data.get("issue_note") else None,
     )
 
 
 def get_issue_frames(
-    video_id: str, issue_type: Optional[str] = None
+    video_id: str, issue_type: Optional[str] = None, fps: float = 30.0
 ) -> list[IssueFrame]:
     """Get frames that have issues, optionally filtered by issue type.
 
     Args:
         video_id: Unique video identifier
         issue_type: Optional issue type to filter by
+        fps: Frame rate for time calculation (default 30.0)
 
     Returns:
         List of IssueFrame objects sorted by frame number
@@ -145,9 +180,9 @@ def get_issue_frames(
         if issue_type and issue_type not in unique_issues:
             continue
 
-        # Calculate time based on frame number (assuming ~30fps)
-        # Frame 1 = 0 seconds, Frame 2 = ~0.033s, etc.
-        time_seconds = (frame.frame_number - 1) / 30.0
+        # Calculate time based on frame number and actual FPS
+        # Frame 1 = 0 seconds, Frame 2 = ~0.033s at 30fps, etc.
+        time_seconds = (frame.frame_number - 1) / fps
 
         # Build thumbnail URL
         thumbnail_url = f"/api/annotated/{video_id}/{frame.frame_number}"
@@ -187,6 +222,10 @@ def get_annotated_image(video_id: str, frame_number: int) -> Path:
         for pattern in [f"frame_{frame_number:03d}{ext}", f"frame_{frame_number}{ext}"]:
             image_path = annotated_dir / pattern
             if image_path.exists():
+                # Verify resolved path is still under ANALYSIS_DIR
+                resolved = image_path.resolve()
+                if not str(resolved).startswith(str(ANALYSIS_DIR.resolve())):
+                    raise FileNotFoundError("Access denied")
                 return image_path
 
     raise FileNotFoundError(
