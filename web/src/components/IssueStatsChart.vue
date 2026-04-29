@@ -47,6 +47,7 @@ const updateChart = () => {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
       formatter: (params: any) => {
+        if (!params || !params.length) return ''
         const data = params[0]
         return `${data.name}<br/>次数: ${data.value}`
       }
