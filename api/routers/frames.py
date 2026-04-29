@@ -51,12 +51,14 @@ async def list_frame_annotations(video_id: str) -> list[FrameAnnotation]:
 async def list_issue_frames(
     video_id: str,
     issue_type: Optional[str] = None,
+    fps: float = 30.0,
 ) -> list[IssueFrame]:
     """Get frames that have issues, optionally filtered by type.
 
     Args:
         video_id: Unique video identifier
         issue_type: Optional issue type to filter by (e.g., "LATE BACKSWING")
+        fps: Frame rate for time calculation (default 30.0)
 
     Returns:
         List of frames with issues, including thumbnail URLs and timestamps
@@ -65,7 +67,7 @@ async def list_issue_frames(
         HTTPException: 404 if video analysis not found
     """
     try:
-        return get_issue_frames(video_id, issue_type)
+        return get_issue_frames(video_id, issue_type, fps)
     except FileNotFoundError:
         raise HTTPException(
             status_code=404,
@@ -95,10 +97,11 @@ async def get_annotated_frame(video_id: str, frame_number: int) -> FileResponse:
     """
     try:
         image_path = get_annotated_image(video_id, frame_number)
+        media_type = "image/jpeg" if image_path.suffix.lower() in (".jpg", ".jpeg") else "image/png"
         return FileResponse(
             path=image_path,
-            media_type="image/png",
-            filename=f"frame_{frame_number:03d}.png",
+            media_type=media_type,
+            filename=f"frame_{frame_number:03d}{image_path.suffix}",
         )
     except FileNotFoundError:
         raise HTTPException(
