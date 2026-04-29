@@ -5,7 +5,7 @@ import type { RadarDimension } from '../api/charts'
 
 const props = defineProps<{
   dimensions: RadarDimension[]
-  overallScore?: number
+  overallScore: number
 }>()
 
 const chartRef = ref<HTMLDivElement | null>(null)
@@ -63,7 +63,7 @@ const updateChart = () => {
           color: '#3b82f6'
         }
       }, {
-        value: [8, 8, 8, 8, 8, 8],
+        value: Array(props.dimensions.length).fill(8),
         name: '目标标准',
         areaStyle: {
           color: 'rgba(34, 197, 94, 0.15)'
@@ -109,7 +109,7 @@ onUnmounted(() => {
 <template>
   <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
     <div ref="chartRef" class="w-full h-72" />
-    <div v-if="overallScore !== undefined" class="text-center mt-2">
+    <div class="text-center mt-2">
       <span class="text-lg font-semibold text-gray-700 dark:text-gray-300">综合评分: </span>
       <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ overallScore }}/10</span>
     </div>
