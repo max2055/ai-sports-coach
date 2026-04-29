@@ -29,12 +29,14 @@ const updateChart = () => {
     tooltip: {
       trigger: 'axis',
       formatter: (params: any) => {
+        if (!params || !params.length) return ''
         const data = params[0]
-        const point = props.points.find(p => p.time_seconds === data.value[0])
+        const timeVal = data.value[0]
+        const point = props.points.find(p => Math.abs(p.time_seconds - timeVal) < 0.001)
         if (point) {
-          return `帧号: ${point.frame_number}<br/>时间: ${data.value[0].toFixed(2)}s<br/>高度: ${(100 - data.value[1]).toFixed(1)}%`
+          return `帧号: ${point.frame_number}<br/>时间: ${timeVal.toFixed(2)}s<br/>高度: ${(100 - data.value[1]).toFixed(1)}%`
         }
-        return `时间: ${data.value[0].toFixed(2)}s<br/>高度: ${(100 - data.value[1]).toFixed(1)}%`
+        return `时间: ${timeVal.toFixed(2)}s<br/>高度: ${(100 - data.value[1]).toFixed(1)}%`
       }
     },
     grid: {
