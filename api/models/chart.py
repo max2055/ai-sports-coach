@@ -38,14 +38,14 @@ class RadarDimension(BaseModel):
     """Single dimension for radar chart."""
 
     name: str
-    value: int  # 0-10 score
+    value: float  # 0-10 score
 
 
 class ConsistencyRadar(BaseModel):
     """6-dimension consistency radar chart data."""
 
     dimensions: list[RadarDimension]
-    overall_score: int
+    overall_score: float
 
 
 class IssueStat(BaseModel):
