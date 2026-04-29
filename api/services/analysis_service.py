@@ -7,13 +7,53 @@ import asyncio
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
 
 from models.analysis import AnalysisState, AnalysisStatus
+
+# Stub exception classes for missing src modules (CR-01).
+# These prevent NameError in except clauses when the real modules are unavailable.
+try:
+    from src.video import FrameExtractionError
+except ModuleNotFoundError:
+    class FrameExtractionError(Exception):  # type: ignore[no-redef]
+        pass
+
+try:
+    from src.analyzer import AnalyzerError
+except ModuleNotFoundError:
+    class AnalyzerError(Exception):  # type: ignore[no-redef]
+        pass
+
+# Stub functions for missing src modules (CR-01).
+# These raise NotImplementedError with clear messages at runtime.
+try:
+    from src.video import extract_frames
+except ModuleNotFoundError:
+    def extract_frames(*args, **kwargs):
+        raise NotImplementedError("src.video.extract_frames not implemented yet")
+
+try:
+    from src.analyzer import analyze_frames
+except ModuleNotFoundError:
+    def analyze_frames(*args, **kwargs):
+        raise NotImplementedError("src.analyzer.analyze_frames not implemented yet")
+
+try:
+    from src.report import generate_report
+except ModuleNotFoundError:
+    def generate_report(*args, **kwargs):
+        raise NotImplementedError("src.report.generate_report not implemented yet")
+
+try:
+    from src.search import fetch_reference_images
+except ModuleNotFoundError:
+    def fetch_reference_images(*args, **kwargs):
+        raise NotImplementedError("src.search.fetch_reference_images not implemented yet")
 
 load_dotenv()
 
@@ -102,7 +142,7 @@ def _update_status(
             video_id=video_id,
             status=status,
             progress=progress,
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(timezone.utc),
         )
     else:
         current.status = status
@@ -117,7 +157,7 @@ def _update_status(
     if annotated_dir:
         current.annotated_dir = annotated_dir
     if status == "completed":
-        current.completed_at = datetime.utcnow()
+        current.completed_at = datetime.now(timezone.utc)
 
     _save_status(video_id, current)
 
@@ -152,8 +192,6 @@ def run_analysis(video_id: str, video_path: Path, analysis_type: str = "full") -
         # Step 2: Extract frames
         _update_status(video_id, status="extracting", progress=10)
 
-        from src.video import extract_frames, FrameExtractionError
-
         frames = extract_frames(video_path, frames_dir, num_frames=12)
         logger.info(f"Extracted {len(frames)} frames for video {video_id}")
         _update_status(video_id, status="extracting", progress=25)
@@ -165,17 +203,12 @@ def run_analysis(video_id: str, video_path: Path, analysis_type: str = "full") -
         if not api_key:
             raise RuntimeError("OPENAI_API_KEY is not set")
 
-        from src.analyzer import analyze_frames, AnalyzerError
-
         context = f"Tennis training video - {analysis_type} analysis"
         result = analyze_frames(frames, context, api_key=api_key)
         logger.info(f"Analysis complete for {video_id}: {result.sport}, score {result.score}/10")
         _update_status(video_id, status="analyzing", progress=60)
 
         # Step 4: Generate coach report
-        from src.report import generate_report
-        from src.search import fetch_reference_images
-
         refs_dir = analysis_dir / "references"
         references = fetch_reference_images(result.sport, refs_dir)
         report_path = generate_report(
