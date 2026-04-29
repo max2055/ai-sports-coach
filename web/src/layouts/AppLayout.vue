@@ -15,15 +15,18 @@ function isActive(path: string): boolean {
 </script>
 
 <template>
-  <div class="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+  <div class="flex min-h-screen bg-zinc-50">
     <!-- Sidebar -->
-    <aside class="w-60 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col flex-shrink-0">
+    <aside class="w-56 bg-tennis-dark text-white flex flex-col flex-shrink-0">
       <!-- Logo -->
-      <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
-        <h1 class="text-lg font-bold text-gray-900 dark:text-white">
-          AI 网球教练
-        </h1>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Tennis Coach</p>
+      <div class="px-5 py-5 border-b border-white/10">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🎾</span>
+          <div>
+            <h1 class="text-sm font-bold leading-tight">AI 网球教练</h1>
+            <p class="text-[10px] text-white/50">Tennis Coach</p>
+          </div>
+        </div>
       </div>
 
       <!-- Navigation -->
@@ -32,26 +35,26 @@ function isActive(path: string): boolean {
           v-for="item in navItems"
           :key="item.path"
           :to="item.path"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
+          class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all"
           :class="isActive(item.path)
-            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'"
+            ? 'bg-white/15 text-white'
+            : 'text-white/60 hover:bg-white/10 hover:text-white'"
         >
-          <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon" />
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" :d="item.icon" />
           </svg>
-          {{ item.name }}
+          <span class="whitespace-nowrap">{{ item.name }}</span>
         </RouterLink>
       </nav>
 
       <!-- Footer -->
-      <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-        <p class="text-xs text-gray-400 dark:text-gray-500">v1.0</p>
+      <div class="px-5 py-4 border-t border-white/10">
+        <p class="text-[10px] text-white/40">v1.0</p>
       </div>
     </aside>
 
     <!-- Main content -->
-    <main class="flex-1 overflow-auto">
+    <main class="flex-1 overflow-auto min-w-0">
       <slot />
     </main>
   </div>
