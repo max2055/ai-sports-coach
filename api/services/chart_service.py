@@ -5,6 +5,7 @@ Extracts metrics from analysis results for ECharts visualization.
 
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Literal
 
@@ -24,14 +25,31 @@ logger = logging.getLogger(__name__)
 ANALYSIS_DIR = Path("output/analysis")
 
 
+def _validate_video_id(video_id: str) -> str:
+    """Validate video_id contains only safe characters and no path traversal."""
+    if not re.match(r'^[a-zA-Z0-9_\-]+$', video_id):
+        raise ValueError(f"Invalid video_id: {video_id}")
+    return video_id
+
+
 def _get_frames_json_path(video_id: str) -> Path:
     """Get path to frames.json for a video."""
-    return ANALYSIS_DIR / video_id / "frames.json"
+    video_id = _validate_video_id(video_id)
+    path = ANALYSIS_DIR / video_id / "frames.json"
+    resolved = path.resolve()
+    if not resolved.is_relative_to(ANALYSIS_DIR.resolve()):
+        raise ValueError(f"Path traversal detected: {video_id}")
+    return resolved
 
 
 def _get_summary_json_path(video_id: str) -> Path:
     """Get path to summary.json for a video."""
-    return ANALYSIS_DIR / video_id / "summary.json"
+    video_id = _validate_video_id(video_id)
+    path = ANALYSIS_DIR / video_id / "summary.json"
+    resolved = path.resolve()
+    if not resolved.is_relative_to(ANALYSIS_DIR.resolve()):
+        raise ValueError(f"Path traversal detected: {video_id}")
+    return resolved
 
 
 def _load_frames_data(video_id: str) -> dict:
@@ -66,6 +84,10 @@ def get_serve_height_data(video_id: str) -> ServeHeightData:
     frames_data = _load_frames_data(video_id)
     frames = frames_data.get("frames", {})
 
+    # Sort frame keys to identify first 3 frames regardless of key sequence
+    sorted_frame_keys = sorted(int(k) for k in frames.keys())
+    serve_frame_numbers = set(sorted_frame_keys[:3])
+
     points: list[ServeHeightPoint] = []
 
     for frame_key, frame_data in frames.items():
@@ -82,12 +104,8 @@ def get_serve_height_data(video_id: str) -> ServeHeightData:
             body = player.get("body", {})
             issue_type = body.get("issue_type")
 
-            # BAD TOSS indicates serve frame
-            if issue_type == "BAD TOSS":
-                is_serve_frame = True
-
-            # Also check first 3 frames as typical serve motion
-            if frame_number <= 3:
+            # BAD TOSS or first 3 frames (by sorted key) indicate serve frame
+            if issue_type == "BAD TOSS" or frame_number in serve_frame_numbers:
                 is_serve_frame = True
 
             if is_serve_frame and body:
@@ -183,7 +201,7 @@ def get_consistency_radar(video_id: str) -> ConsistencyRadar:
     if summary_data:
         # Try to extract scores from summary
         scores = summary_data.get("scores", {})
-        overall_score = summary_data.get("overall_score", 5)
+        overall_score = min(10, max(0, summary_data.get("overall_score", 5)))
 
         # Map scores to dimensions
         for name in dimension_names:
