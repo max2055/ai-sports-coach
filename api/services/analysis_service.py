@@ -7,53 +7,25 @@ import asyncio
 import json
 import logging
 import os
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
 
+# Ensure project root is on sys.path so src/ and tennis_annotate.py are importable.
+# When uvicorn runs from api/ directory, the project root may not be in sys.path.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from models.analysis import AnalysisState, AnalysisStatus
 
-# Stub exception classes for missing src modules (CR-01).
-# These prevent NameError in except clauses when the real modules are unavailable.
-try:
-    from src.video import FrameExtractionError
-except ModuleNotFoundError:
-    class FrameExtractionError(Exception):  # type: ignore[no-redef]
-        pass
-
-try:
-    from src.analyzer import AnalyzerError
-except ModuleNotFoundError:
-    class AnalyzerError(Exception):  # type: ignore[no-redef]
-        pass
-
-# Stub functions for missing src modules (CR-01).
-# These raise NotImplementedError with clear messages at runtime.
-try:
-    from src.video import extract_frames
-except ModuleNotFoundError:
-    def extract_frames(*args, **kwargs):
-        raise NotImplementedError("src.video.extract_frames not implemented yet")
-
-try:
-    from src.analyzer import analyze_frames
-except ModuleNotFoundError:
-    def analyze_frames(*args, **kwargs):
-        raise NotImplementedError("src.analyzer.analyze_frames not implemented yet")
-
-try:
-    from src.report import generate_report
-except ModuleNotFoundError:
-    def generate_report(*args, **kwargs):
-        raise NotImplementedError("src.report.generate_report not implemented yet")
-
-try:
-    from src.search import fetch_reference_images
-except ModuleNotFoundError:
-    def fetch_reference_images(*args, **kwargs):
-        raise NotImplementedError("src.search.fetch_reference_images not implemented yet")
+from src.video import extract_frames, FrameExtractionError
+from src.analyzer import analyze_frames, AnalyzerError
+from src.report import generate_report
+from src.search import fetch_reference_images
 
 load_dotenv()
 
@@ -224,7 +196,6 @@ def run_analysis(video_id: str, video_path: Path, analysis_type: str = "full") -
         # Step 5: Run tennis annotation (tennis_annotate.py style)
         annotated_dir.mkdir(parents=True, exist_ok=True)
 
-        # Import tennis annotation functions
         from tennis_annotate import call_gpt4o, annotate_frame, generate_report as generate_tennis_report
 
         # Get frame-annotated analysis from GPT-4o
