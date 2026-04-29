@@ -1,5 +1,6 @@
 """FastAPI application entry point for AI Tennis Coach API."""
 
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -15,10 +16,10 @@ app = FastAPI(
 # CORS configuration for frontend access
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5252", "http://localhost:5173", "http://localhost:3000"],  # Vue dev server
+    allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:5252,http://localhost:5173,http://localhost:3000").split(","),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # Include routers

@@ -29,8 +29,9 @@ async function handleFile(file: File) {
     emit('uploadError', '请选择有效的视频文件 (mp4, mov, avi, mkv, webm)')
     return
   }
-  uploadStatus.value = 'uploading'
+  uploadStatus.value = 'idle'
   resetUpload()
+  uploadStatus.value = 'uploading'
   try {
     const result = await upload(file, props.analysisType)
     if (result) {

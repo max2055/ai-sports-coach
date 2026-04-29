@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import type { AnalysisType, AnalysisTypeOption } from '../types/upload'
 
-defineProps<{ modelValue: AnalysisType }>()
+const props = defineProps<{ modelValue: AnalysisType }>()
 const emit = defineEmits<{ (e: 'update:modelValue', value: AnalysisType): void }>()
 
 const options: AnalysisTypeOption[] = [
@@ -13,7 +13,9 @@ const options: AnalysisTypeOption[] = [
   { value: 'full', label: '全场', icon: '🏆', description: '全面分析所有技术动作' },
 ]
 
-const selectedType = ref<AnalysisType>(props.modelValue || 'full')
+const selectedType = ref<AnalysisType>(props.modelValue ?? 'full')
+
+watch(() => props.modelValue, (v) => { selectedType.value = v })
 
 function selectType(type: AnalysisType) {
   selectedType.value = type

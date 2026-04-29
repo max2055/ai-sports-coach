@@ -13,7 +13,7 @@ class VideoMetadata(BaseModel):
     width: int
     height: int
     size: int  # bytes
-    format: str
+    file_format: str
 
 
 class UploadResponse(BaseModel):

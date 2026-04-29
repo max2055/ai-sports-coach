@@ -6,7 +6,8 @@ import uuid
 from pathlib import Path
 from typing import Tuple
 
-UPLOAD_DIR = Path("output/uploads")
+BASE_DIR = Path(__file__).resolve().parent.parent
+UPLOAD_DIR = BASE_DIR / "output" / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -45,11 +46,14 @@ def extract_video_metadata(file_path: Path) -> Tuple[float, int, int]:
             raise RuntimeError("No video streams found in file")
 
         stream = data["streams"][0]
-        duration = float(stream.get("duration", 0))
-        width = stream.get("width", 0)
-        height = stream.get("height", 0)
+        duration = stream.get("duration")
+        width = stream.get("width")
+        height = stream.get("height")
 
-        return duration, width, height
+        if not duration or not width or not height:
+            raise RuntimeError("Incomplete video metadata: duration, width, or height missing")
+
+        return float(duration), int(width), int(height)
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"ffprobe failed: {e.stderr}") from e
     except (json.JSONDecodeError, KeyError, ValueError) as e:

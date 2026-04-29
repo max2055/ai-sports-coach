@@ -81,7 +81,7 @@ async function loadRecent() {
   try {
     const data = await getHistory()
     recentEntries.value = data.entries.slice(0, 5)
-  } catch { /* ignore */ }
+  } catch (err) { console.warn('Failed to load recent history:', err) }
   finally { recentLoading.value = false }
 }
 

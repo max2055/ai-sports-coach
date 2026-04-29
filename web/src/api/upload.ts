@@ -27,7 +27,6 @@ export async function uploadVideo(
   formData.append('analysis_type', analysisType)
 
   const response = await axios.post<UploadResult>(`${API_BASE}/api/upload`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
     onUploadProgress: (progressEvent) => {
       const percent = progressEvent.total
         ? Math.round((progressEvent.loaded * 100) / progressEvent.total)

@@ -14,6 +14,8 @@ from services.video_service import (
 
 router = APIRouter()
 
+MAX_UPLOAD_SIZE = 500 * 1024 * 1024  # 500 MB
+
 
 @router.post("/upload", response_model=UploadResponse)
 async def upload_video(
@@ -46,8 +48,15 @@ async def upload_video(
         )
 
     try:
+        # Check Content-Length header first (early rejection)
+        if file.size and file.size > MAX_UPLOAD_SIZE:
+            raise HTTPException(status_code=413, detail=f"File too large. Max size: {MAX_UPLOAD_SIZE // (1024 * 1024)} MB")
+
         # Read file content
         content = await file.read()
+
+        if len(content) > MAX_UPLOAD_SIZE:
+            raise HTTPException(status_code=413, detail=f"File too large. Max size: {MAX_UPLOAD_SIZE // (1024 * 1024)} MB")
 
         if len(content) == 0:
             raise HTTPException(status_code=400, detail="Empty file provided")
@@ -66,7 +75,7 @@ async def upload_video(
             width=width,
             height=height,
             size=size,
-            format=format_str,
+            file_format=format_str,
         )
 
         return UploadResponse(
