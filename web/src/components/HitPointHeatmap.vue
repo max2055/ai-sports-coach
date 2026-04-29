@@ -82,11 +82,7 @@ const updateChart = () => {
         }
       }
     }],
-    legend: {
-      bottom: 0,
-      data: ['正常', '问题'],
-      formatter: (name: string) => name
-    }
+    // Legend removed — visual legend rendered in template (lines 117-126)
   }
 
   chartInstance.setOption(option)
