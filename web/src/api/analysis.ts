@@ -10,7 +10,7 @@ export interface AnalysisState {
   result_path?: string
 }
 
-export async function startAnalysis(videoId: string): Promise<{ video_id: string; status: string }> {
+export async function startAnalysis(videoId: string): Promise<{ video_id: string; status: AnalysisState['status'] }> {
   const response = await axios.post(`${API_BASE}/api/analyze/${videoId}`)
   return response.data
 }
@@ -20,7 +20,7 @@ export async function getAnalysisStatus(videoId: string): Promise<AnalysisState>
   return response.data
 }
 
-export async function retryAnalysis(videoId: string): Promise<{ video_id: string; status: string }> {
+export async function retryAnalysis(videoId: string): Promise<{ video_id: string; status: AnalysisState['status'] }> {
   const response = await axios.post(`${API_BASE}/api/retry/${videoId}`)
   return response.data
 }
