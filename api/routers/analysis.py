@@ -3,6 +3,7 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from models.analysis import AnalysisState, AnalysisResponse, AnalysisStatus
+from models.upload import AnalysisType
 from services.analysis_service import (
     get_analysis_status,
     start_analysis,
@@ -38,6 +39,14 @@ async def start_video_analysis(
         raise HTTPException(
             status_code=404,
             detail=f"Video not found: {video_id}",
+        )
+
+    # Validate analysis_type
+    valid_types: tuple[str, ...] = ("forehand", "backhand", "serve", "volley", "full")
+    if analysis_type not in valid_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid analysis_type: {analysis_type}. Must be one of: {', '.join(valid_types)}",
         )
 
     # Check for existing running analysis
@@ -107,6 +116,14 @@ async def retry_analysis(
         raise HTTPException(
             status_code=404,
             detail=f"Video not found: {video_id}",
+        )
+
+    # Validate analysis_type
+    valid_types: tuple[str, ...] = ("forehand", "backhand", "serve", "volley", "full")
+    if analysis_type not in valid_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid analysis_type: {analysis_type}. Must be one of: {', '.join(valid_types)}",
         )
 
     # Check previous status
