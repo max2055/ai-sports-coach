@@ -69,8 +69,8 @@ export function useAnalysis(videoId: string) {
       // Start polling every 2 seconds
       pollInterval = setInterval(pollStatus, 2000)
 
-      // Also poll immediately
-      await pollStatus()
+      // Delay first poll to give background task time to initialize
+      setTimeout(async () => await pollStatus(), 1000)
     } catch (err) {
       error.value = err instanceof Error ? err.message : '启动分析失败'
       status.value = 'failed'
@@ -94,7 +94,7 @@ export function useAnalysis(videoId: string) {
 
       // Start polling
       pollInterval = setInterval(pollStatus, 2000)
-      await pollStatus()
+      setTimeout(async () => await pollStatus(), 1000)
     } catch (err) {
       error.value = err instanceof Error ? err.message : '重试失败'
       status.value = 'failed'
