@@ -194,27 +194,19 @@ const onApplyOffset = (offset: number) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  <div class="p-6 lg:p-8">
     <!-- Header -->
-    <div class="bg-white dark:bg-gray-800 shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-              技术分析报告
-            </h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              视频ID: {{ videoId }}
-            </p>
-          </div>
-          <router-link
-            to="/"
-            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-          >
-            返回首页
-          </router-link>
-        </div>
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">技术分析报告</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">视频ID: {{ videoId }}</p>
       </div>
+      <router-link
+        to="/"
+        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+      >
+        ← 返回
+      </router-link>
     </div>
 
     <!-- Loading state -->
