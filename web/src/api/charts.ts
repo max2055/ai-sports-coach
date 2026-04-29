@@ -27,21 +27,49 @@ export interface IssueStat {
 }
 
 export async function getServeHeightData(videoId: string): Promise<{ points: ServeHeightPoint[] }> {
-  const res = await axios.get(`${API_BASE}/api/charts/${videoId}/serve-height`)
-  return res.data
+  try {
+    const res = await axios.get(`${API_BASE}/api/charts/${videoId}/serve-height`)
+    return res.data
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`Failed to load serve height data: ${error.response?.status} ${error.response?.data?.detail || error.message}`)
+    }
+    throw error
+  }
 }
 
 export async function getHitPointData(videoId: string): Promise<{ points: HitPoint[] }> {
-  const res = await axios.get(`${API_BASE}/api/charts/${videoId}/hit-points`)
-  return res.data
+  try {
+    const res = await axios.get(`${API_BASE}/api/charts/${videoId}/hit-points`)
+    return res.data
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`Failed to load hit point data: ${error.response?.status} ${error.response?.data?.detail || error.message}`)
+    }
+    throw error
+  }
 }
 
 export async function getRadarData(videoId: string): Promise<{ dimensions: RadarDimension[]; overall_score: number }> {
-  const res = await axios.get(`${API_BASE}/api/charts/${videoId}/radar`)
-  return res.data
+  try {
+    const res = await axios.get(`${API_BASE}/api/charts/${videoId}/radar`)
+    return res.data
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`Failed to load radar data: ${error.response?.status} ${error.response?.data?.detail || error.message}`)
+    }
+    throw error
+  }
 }
 
 export async function getIssueStats(videoId: string): Promise<{ stats: IssueStat[]; total_issues: number; total_frames: number }> {
-  const res = await axios.get(`${API_BASE}/api/charts/${videoId}/issues`)
-  return res.data
+  try {
+    const res = await axios.get(`${API_BASE}/api/charts/${videoId}/issues`)
+    return res.data
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`Failed to load issue stats: ${error.response?.status} ${error.response?.data?.detail || error.message}`)
+    }
+    throw error
+  }
 }
