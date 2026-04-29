@@ -12,7 +12,11 @@ const isCompleted = computed(() => status.value === 'completed')
 const isFailed = computed(() => status.value === 'failed')
 const isProcessing = computed(() => !isCompleted.value && !isFailed.value)
 
-watch(isCompleted, () => { setTimeout(() => router.push(`/report/${videoId}`), 1000) })
+watch(isCompleted, (completed) => {
+  if (completed) {
+    setTimeout(() => router.push(`/report/${videoId}`), 1000)
+  }
+})
 onMounted(() => start())
 function handleRetry() { retry() }
 function goBack() { router.push('/') }
