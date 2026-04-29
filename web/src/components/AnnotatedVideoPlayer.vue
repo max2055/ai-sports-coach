@@ -43,7 +43,7 @@ const COLORS = {
  * Get current frame number from video time
  */
 const getFrameNumber = (time: number): number => {
-  return Math.floor(time * videoFps.value)
+  return Math.floor(time * videoFps.value) + 1  // +1 to match backend 1-indexing
 }
 
 /**
@@ -158,8 +158,12 @@ const resizeCanvas = () => {
   const canvas = canvasRef.value
   if (!video || !canvas) return
 
-  canvas.width = video.videoWidth || video.clientWidth
-  canvas.height = video.videoHeight || video.clientHeight
+  const w = video.videoWidth || video.clientWidth
+  const h = video.videoHeight || video.clientHeight
+  if (w === 0 || h === 0) return  // Guard against zero dimensions
+
+  canvas.width = w
+  canvas.height = h
 
   drawAnnotations()
 }
