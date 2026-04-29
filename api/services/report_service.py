@@ -143,8 +143,13 @@ def extract_issue_summary(frames_json_path: Path) -> list[IssueSummaryRow]:
     if not frames_json_path.exists():
         return []
 
-    with open(frames_json_path) as f:
-        data = json.load(f)
+    try:
+        with open(frames_json_path) as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Invalid frames.json: {e}")
+        return []
 
     rows = []
     frames = data.get("frames", {})
@@ -153,18 +158,20 @@ def extract_issue_summary(frames_json_path: Path) -> list[IssueSummaryRow]:
     for frame_num_str, frame_data in frames.items():
         frame_num = int(frame_num_str)
         for player in frame_data.get("players", []):
-            issue_type = player.get("issue_type", "")
-            if issue_type and not issue_type.startswith("GOOD"):
-                issue_counts[issue_type] = issue_counts.get(issue_type, 0) + 1
-                rows.append(
-                    IssueSummaryRow(
-                        frame_number=frame_num,
-                        issue_type=issue_type,
-                        body_part=ISSUE_BODY_MAP.get(issue_type, "未知"),
-                        description=issue_type,
-                        priority="high" if issue_counts[issue_type] > 2 else "medium",
+            for body_part in ["body", "hand_l", "hand_r", "foot_l", "foot_r"]:
+                part_data = player.get(body_part, {})
+                issue_type = part_data.get("issue_type", "")
+                if issue_type and not issue_type.startswith("GOOD"):
+                    issue_counts[issue_type] = issue_counts.get(issue_type, 0) + 1
+                    rows.append(
+                        IssueSummaryRow(
+                            frame_number=frame_num,
+                            issue_type=issue_type,
+                            body_part=ISSUE_BODY_MAP.get(issue_type, "未知"),
+                            description=issue_type,
+                            priority="high" if issue_counts[issue_type] > 2 else "medium",
+                        )
                     )
-                )
 
     return rows
 
