@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from routers import analysis, charts, frames, pros, report, upload
+from routers import analysis, charts, frames, history, pros, report, upload
 
 app = FastAPI(
     title="AI Tennis Coach API",
@@ -28,6 +28,7 @@ app.include_router(frames.router, prefix="/api", tags=["frames"])
 app.include_router(charts.router, prefix="/api", tags=["charts"])
 app.include_router(pros.router, prefix="/api", tags=["pros"])
 app.include_router(report.router, prefix="/api", tags=["report"])
+app.include_router(history.router, prefix="/api", tags=["history"])
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
